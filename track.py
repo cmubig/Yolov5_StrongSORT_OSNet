@@ -19,11 +19,11 @@ ROOT = FILE.parents[0]  # yolov5 strongsort root directory
 WEIGHTS = ROOT / 'weights'
 
 if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
+    sys.path.insert(0, str(ROOT))  # add ROOT to PATH
 if str(ROOT / 'yolov5') not in sys.path:
-    sys.path.append(str(ROOT / 'yolov5'))  # add yolov5 ROOT to PATH
+    sys.path.insert(1, str(ROOT / 'yolov5'))  # add yolov5 ROOT to PATH
 if str(ROOT / 'strong_sort') not in sys.path:
-    sys.path.append(str(ROOT / 'strong_sort'))  # add strong_sort ROOT to PATH
+    sys.path.insert(2, str(ROOT / 'strong_sort'))  # add strong_sort ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import logging
@@ -131,6 +131,7 @@ def run(
         )
     outputs = [None] * nr_sources
 
+    created_file = False
     # Run tracking
     model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
     dt, seen = [0.0, 0.0, 0.0, 0.0], 0
@@ -178,6 +179,10 @@ def run(
             curr_frames[i] = im0
 
             txt_path = str(save_dir / 'tracks' / txt_file_name)  # im.txt
+            if not created_file and os.path.exists(txt_path + '.txt'):
+                print('Removing old output file...')
+                os.remove(txt_path + '.txt')
+            created_file = True
             s += '%gx%g ' % im.shape[2:]  # print string
             imc = im0.copy() if save_crop else im0  # for save_crop
 
@@ -219,7 +224,7 @@ def run(
                             bbox_w = output[2] - output[0]
                             bbox_h = output[3] - output[1]
                             # Write MOT compliant results to file
-                            with open(txt_path + '.txt', 'a') as f:
+                            with open(txt_path + '.txt', 'a+') as f:
                                 f.write(('%g ' * 10 + '\n') % (frame_idx + 1, id, bbox_left,  # MOT format
                                                                bbox_top, bbox_w, bbox_h, -1, -1, -1, i))
 
